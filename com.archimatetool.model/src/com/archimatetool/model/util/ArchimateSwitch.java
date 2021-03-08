@@ -109,6 +109,7 @@ import com.archimatetool.model.IPhysicalElement;
 import com.archimatetool.model.IPlateau;
 import com.archimatetool.model.IPrinciple;
 import com.archimatetool.model.IProduct;
+import com.archimatetool.model.IProfile;
 import com.archimatetool.model.IProperties;
 import com.archimatetool.model.IProperty;
 import com.archimatetool.model.IRealizationRelationship;
@@ -267,6 +268,18 @@ public class ArchimateSwitch<T> extends Switch<T> {
             case IArchimatePackage.CLONEABLE: {
                 ICloneable cloneable = (ICloneable)theEObject;
                 T result = caseCloneable(cloneable);
+                if (result == null) result = defaultCase(theEObject);
+                return result;
+            }
+            case IArchimatePackage.PROFILE: {
+                IProfile profile = (IProfile)theEObject;
+                T result = caseProfile(profile);
+                if (result == null) result = caseArchimateModelObject(profile);
+                if (result == null) result = caseDiagramModelImageProvider(profile);
+                if (result == null) result = caseAdapter(profile);
+                if (result == null) result = caseNameable(profile);
+                if (result == null) result = caseIdentifier(profile);
+                if (result == null) result = caseFeatures(profile);
                 if (result == null) result = defaultCase(theEObject);
                 return result;
             }
@@ -2517,6 +2530,21 @@ public class ArchimateSwitch<T> extends Switch<T> {
      * @generated
      */
     public T caseCloneable(ICloneable object) {
+        return null;
+    }
+
+    /**
+     * Returns the result of interpreting the object as an instance of '<em>Profile</em>'.
+     * <!-- begin-user-doc -->
+     * This implementation returns null;
+     * returning a non-null result will terminate the switch.
+     * <!-- end-user-doc -->
+     * @param object the target of the switch.
+     * @return the result of interpreting the object as an instance of '<em>Profile</em>'.
+     * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+     * @generated
+     */
+    public T caseProfile(IProfile object) {
         return null;
     }
 
