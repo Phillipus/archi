@@ -36,6 +36,7 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TableViewerEditor;
@@ -281,13 +282,24 @@ public class ProfilesManagerDialog extends ExtendedTitleAreaDialog {
                 
                 // Disable/enable some actions
                 fActionDelete.setEnabled(enabled);
-                fActionChooseImage.setEnabled(enabled);
                 fButtonDelete.setEnabled(enabled);
-                fImageButton.setEnabled(enabled);
                 
+                fImageButton.setEnabled(enabled);
+                fActionChooseImage.setEnabled(enabled);
                 fActionClearImage.setEnabled(false);
+                
+                // Image buttons/actions depend on some factors...
                 for(Object o : selection) {
-                    if(((IProfile)o).getImagePath() != null) {
+                    IProfile profile = (IProfile)o;
+                    
+                    // If any Profile can't have an image then these are disabled
+                    if(!canHaveImage(profile)) {
+                        fImageButton.setEnabled(false);
+                        fActionChooseImage.setEnabled(false);
+                    }
+                    
+                    // Set this one to true only if there is an image to clear
+                    if(profile.getImagePath() != null) {
                         fActionClearImage.setEnabled(true);
                     }
                 }
@@ -382,7 +394,7 @@ public class ProfilesManagerDialog extends ExtendedTitleAreaDialog {
         fImagePreview.addListener(SWT.MouseDoubleClick, new Listener() {
             @Override
             public void handleEvent(Event event) {
-                if(fImageButton.isEnabled()) {
+                if(fActionChooseImage.isEnabled()) {
                     chooseImage();
                 }
             }
@@ -515,6 +527,15 @@ public class ProfilesManagerDialog extends ExtendedTitleAreaDialog {
      */
     private boolean isValidProfileNameAndType(String name, String conceptType) {
         return !name.isBlank() && !ArchimateModelUtils.hasProfileByNameAndType(fProfilesCopy.values(), name, conceptType);
+    }
+    
+    /**
+     * Only ArchiMate elements (not Junctions) can have images
+     */
+    private boolean canHaveImage(IProfile profile) {
+        EClass eClass = profile.getConceptClass();
+        return !(IArchimatePackage.eINSTANCE.getArchimateRelationship().isSuperTypeOf(eClass) ||
+                IArchimatePackage.eINSTANCE.getJunction().isSuperTypeOf(eClass));
     }
     
     @Override
@@ -653,9 +674,21 @@ public class ProfilesManagerDialog extends ExtendedTitleAreaDialog {
                 indexToClassMap = new HashMap<>();
                 classToIndexMap = new HashMap<>();
                 
-                // Iterate through all Archimate Element classes and add to map of friendly name -> Class name
+                // Iterate through all Archimate Concept classes and add to map of friendly name -> Class name
                 // Friendly names have to be unique for this to work!
+                
+                // Elements
                 for(EClass eClass : ArchimateModelUtils.getAllArchimateClasses()) {
+                    nameToClassMap.put(ArchiLabelProvider.INSTANCE.getDefaultName(eClass), eClass.getName());
+                }
+                
+                // Relations
+                for(EClass eClass : ArchimateModelUtils.getRelationsClasses()) {
+                    nameToClassMap.put(ArchiLabelProvider.INSTANCE.getDefaultName(eClass), eClass.getName());
+                }
+                
+                // Connectors
+                for(EClass eClass : ArchimateModelUtils.getConnectorClasses()) {
                     nameToClassMap.put(ArchiLabelProvider.INSTANCE.getDefaultName(eClass), eClass.getName());
                 }
                 
@@ -705,6 +738,12 @@ public class ProfilesManagerDialog extends ExtendedTitleAreaDialog {
             if(isValidProfileNameAndType(profile.getName(), conceptType)) {
                 profile.setConceptType(conceptType);
                 getViewer().update(profile, null);
+                
+                // If concept type is a relation or connector remove image
+                if(!canHaveImage(profile)) {
+                    profile.setImagePath(null);
+                    getViewer().setSelection(new StructuredSelection(profile));
+                }
             }
         }
     }
